@@ -5,6 +5,7 @@ import { ensureSchema } from "./config/db.js";
 import { analyzeRouter } from "./routes/analyze.routes.js";
 import { githubRouter } from "./routes/github.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { terminalRouter } from "./routes/terminal.routes.js";
 
 const app = express();
 app.use(cors({ origin: env.frontendOrigin }));
@@ -13,6 +14,7 @@ app.use(express.json({ limit: "5mb" }));
 app.get("/health", (_req, res) => res.json({ ok: true }));
 app.use("/api", analyzeRouter);
 app.use("/api", githubRouter);
+app.use("/api", terminalRouter);
 
 app.use(errorHandler);
 

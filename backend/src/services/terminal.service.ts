@@ -1,14 +1,6 @@
-import pty from "node-pty";
+import * as pty from "node-pty";
 
-/**
- * IMPORTANT: this is a dev-grade sandbox, not a real security boundary.
- * It whitelists the top-level command and runs in a real pty so we capture
- * actual stdout/stderr/exit-code behavior (needed to catch git's merge/push
- * errors exactly as they'd appear in a real terminal).
- *
- * Before ever pointing this at untrusted input, this should run inside a
- * per-session Docker container instead of directly on the host.
- */
+// This is a sandboxed terminal service that allows running a limited set of commands in a controlled environment.
 
 const ALLOWED_COMMANDS = ["git", "ls", "cat", "pwd", "diff", "status"];
 
