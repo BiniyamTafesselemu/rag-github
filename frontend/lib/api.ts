@@ -27,3 +27,29 @@ export async function analyze(input: {
   if (!res.ok) throw new Error((await res.json()).error ?? "Request failed");
   return res.json();
 }
+export interface Mergeability {
+  mergeable: boolean | null;
+  mergeableState: string;
+}
+
+export async function checkMergeability(owner: string, repo: string, pullNumber: number): Promise<Mergeability> {
+  const res = await fetch(`${API_BASE}/api/repo/${owner}/${repo}/pull/${pullNumber}/mergeability`);
+  if (!res.ok) throw new Error((await res.json()).error ?? "Request failed");
+  return res.json();
+}
+
+export interface TerminalResult {
+  command: string;
+  output: string;
+  exitCode: number;
+}
+
+export async function runTerminalCommand(command: string, cwd: string): Promise<TerminalResult> {
+  const res = await fetch(`${API_BASE}/api/terminal/run`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ command, cwd }),
+  });
+  if (!res.ok) throw new Error((await res.json()).error ?? "Request failed");
+  return res.json();
+}
