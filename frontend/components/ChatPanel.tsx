@@ -4,6 +4,8 @@ import { useState } from "react";
 import { analyze, type AnalyzeResponse } from "@/lib/api";
 import { TerminalView } from "./TerminalView";
 import { RecommendationCard } from "./RecommendationCard";
+import { PullRequestCheck } from "./PullRequestCheck";
+import { LiveTerminal } from "./LiveTerminal";
 
 export function ChatPanel() {
   const [input, setInput] = useState("");
@@ -42,7 +44,10 @@ export function ChatPanel() {
         className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-white/30"
       />
 
+      {/* <TerminalView value={input} onChange={setInput} /> */}
       <TerminalView value={input} onChange={setInput} />
+
+      <LiveTerminal onAnalyze={(output) => setInput(output)} />
 
       <button
         onClick={handleAnalyze}
@@ -52,8 +57,10 @@ export function ChatPanel() {
         {loading ? "Analyzing..." : "Analyze"}
       </button>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+     {error && <p className="text-sm text-red-400">{error}</p>}
       {result && <RecommendationCard result={result} />}
+
+      <PullRequestCheck />
     </div>
   );
 }
