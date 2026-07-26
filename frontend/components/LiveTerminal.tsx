@@ -5,7 +5,7 @@ import { runTerminalCommand, type TerminalResult } from "@/lib/api";
 
 export function LiveTerminal({ onAnalyze }: { onAnalyze: (output: string) => void }) {
   const [command, setCommand] = useState("git status");
-  const [cwd, setCwd] = useState("");
+  const [cwd, setCwd] = useState(process.env.NEXT_PUBLIC_DEFAULT_REPO_PATH ?? "");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TerminalResult | null>(null);
   const [error, setError] = useState<string | null>(null);

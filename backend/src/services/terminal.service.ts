@@ -30,6 +30,9 @@ export async function runCommand(command: string, cwd: string): Promise<CommandR
   if (!isAllowed(command)) {
     throw new Error(`Command not allowed by sandbox whitelist: "${command}"`);
   }
+  if (!cwd || !cwd.trim() || !cwd.startsWith("/")) {
+    throw new Error(`cwd must be a non-empty absolute path, got: "${cwd}"`);
+  }
 
   const commandParts = command.trim().split(/\s+/);
 
