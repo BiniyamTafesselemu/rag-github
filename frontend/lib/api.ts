@@ -53,3 +53,18 @@ export async function runTerminalCommand(command: string, cwd: string): Promise<
   if (!res.ok) throw new Error((await res.json()).error ?? "Request failed");
   return res.json();
 }
+export interface SessionRecord {
+  id: string;
+  repo: string | null;
+  error_text: string;
+  classification: string;
+  recommendation: string;
+  suggested_commands: string[];
+  created_at: string;
+}
+
+export async function getSessions(): Promise<SessionRecord[]> {
+  const res = await fetch(`${API_BASE}/api/sessions`);
+  if (!res.ok) throw new Error((await res.json()).error ?? "Request failed");
+  return res.json();
+}
