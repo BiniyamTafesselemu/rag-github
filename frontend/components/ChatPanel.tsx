@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { analyze, type AnalyzeResponse } from "@/lib/api";
+import { analyze, analyzeStream, type AnalyzeResponse, type FixPlan } from "@/lib/api";
 import { TerminalView } from "./TerminalView";
 import { RecommendationCard } from "./RecommendationCard";
 import { PullRequestCheck } from "./PullRequestCheck";
@@ -15,18 +15,41 @@ export function ChatPanel() {
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleAnalyze() {
+ async function handleAnalyze() {
     if (!input.trim()) return;
     setLoading(true);
     setError(null);
-    try {
-      const res = await analyze({ terminalOutput: input, repo: repo || undefined });
-      setResult(res);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
+    setResult(null);
+
+    let classification = "";
+    let sources: { url: string; title: string | null }[] = [];
+    let recommendation = "";
+
+    await analyzeStream(
+      { terminalOutput: input, repo: repo || undefined },
+      {
+        onClassification: (c) => {
+          classification = c;
+          setResult({ classification, sources, recommendation, fixPlan: { summary: "", commands: [], risk: "low", requiresConfirmation: false } });
+        },
+        onSources: (s) => {
+          sources = s;
+          setResult((prev) => (prev ? { ...prev, sources } : prev));
+        },
+        onToken: (token) => {
+          recommendation += token;
+          setResult((prev) => (prev ? { ...prev, recommendation } : prev));
+        },
+        onFixPlan: (fixPlan: FixPlan) => {
+          setResult((prev) => (prev ? { ...prev, fixPlan } : prev));
+        },
+        onDone: () => setLoading(false),
+        onError: (err) => {
+          setError(err);
+          setLoading(false);
+        },
+      }
+    );
   }
 
   return (

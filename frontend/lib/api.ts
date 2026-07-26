@@ -68,3 +68,57 @@ export async function getSessions(): Promise<SessionRecord[]> {
   if (!res.ok) throw new Error((await res.json()).error ?? "Request failed");
   return res.json();
 }
+
+export interface StreamCallbacks {
+  onClassification?: (classification: string) => void;
+  onSources?: (sources: { url: string; title: string | null }[]) => void;
+  onToken?: (token: string) => void;
+  onFixPlan?: (fixPlan: FixPlan) => void;
+  onDone?: () => void;
+  onError?: (error: string) => void;
+}
+
+export async function analyzeStream(
+  input: { terminalOutput?: string; diff?: string; repo?: string },
+  callbacks: StreamCallbacks
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/analyze/stream`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  if (!res.ok || !res.body) {
+    callbacks.onError?.("Failed to start stream");
+    return;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split("\n\n");
+    buffer = events.pop() ?? "";
+
+    for (const event of events) {
+      const lines = event.split("\n");
+      const eventType = lines.find((l) => l.startsWith("event:"))?.slice(6).trim();
+      const dataLine = lines.find((l) => l.startsWith("data:"))?.slice(5).trim();
+      if (!eventType || !dataLine) continue;
+
+      const data = JSON.parse(dataLine);
+
+      if (eventType === "classification") callbacks.onClassification?.(data.classification);
+      if (eventType === "sources") callbacks.onSources?.(data);
+      if (eventType === "token") callbacks.onToken?.(data);
+      if (eventType === "fixplan") callbacks.onFixPlan?.(data);
+      if (eventType === "done") callbacks.onDone?.();
+      if (eventType === "error") callbacks.onError?.(data.error);
+    }
+  }
+}
