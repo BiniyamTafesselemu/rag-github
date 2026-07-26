@@ -1,5 +1,6 @@
 import { env } from "../../config/env.js";
 import { callLlm } from "./llmClient.js";
+import { streamLlm } from "./llmClient.js";
 
 export interface DocChunk {
   sourceUrl: string;
@@ -27,4 +28,25 @@ export async function generateRecommendation(input: {
       content: `Problem:\n${input.problemDescription}\n\nRelevant documentation:\n${context || "(none retrieved)"}\n\nExplain the issue and recommend a fix, citing sources by number.`,
     },
   ]);
+}
+export async function streamRecommendation(
+  input: { problemDescription: string; chunks: DocChunk[] },
+  onToken: (chunk: string) => void
+): Promise<void> {
+  const context = input.chunks
+    .map((c, i) => `[${i + 1}] Source: ${c.sourceUrl}\n${c.content}`)
+    .join("\n\n");
+
+  await streamLlm(
+    env.groq.generatorModel,
+    env.groq.apiKey,
+    [
+      { role: "system", content: SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: `Problem:\n${input.problemDescription}\n\nRelevant documentation:\n${context || "(none retrieved)"}\n\nExplain the issue and recommend a fix, citing sources by number.`,
+      },
+    ],
+    onToken
+  );
 }
