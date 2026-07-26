@@ -6,6 +6,7 @@ import { TerminalView } from "./TerminalView";
 import { RecommendationCard } from "./RecommendationCard";
 import { PullRequestCheck } from "./PullRequestCheck";
 import { LiveTerminal } from "./LiveTerminal";
+import { History } from "./History";
 
 export function ChatPanel() {
   const [input, setInput] = useState("");
@@ -29,38 +30,43 @@ export function ChatPanel() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-10 px-4 space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold">GitHub Error Assistant</h1>
-        <p className="text-white/50 text-sm mt-1">
-          Paste an error (or a diff with no error) and get a grounded recommendation.
-        </p>
-      </header>
+    <div className="flex max-w-6xl mx-auto py-10 px-4 gap-8">
+      <aside className="w-72 shrink-0 hidden lg:block">
+        <History />
+      </aside>
 
-      <input
-        value={repo}
-        onChange={(e) => setRepo(e.target.value)}
-        placeholder="owner/repo (optional)"
-        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-white/30"
-      />
+      <div className="flex-1 max-w-2xl space-y-6">
+        <header>
+          <h1 className="text-2xl font-semibold">GitHub Error Assistant</h1>
+          <p className="text-white/50 text-sm mt-1">
+            Paste an error (or a diff with no error) and get a grounded recommendation.
+          </p>
+        </header>
 
-      {/* <TerminalView value={input} onChange={setInput} /> */}
-      <TerminalView value={input} onChange={setInput} />
+        <input
+          value={repo}
+          onChange={(e) => setRepo(e.target.value)}
+          placeholder="owner/repo (optional)"
+          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none placeholder:text-white/30"
+        />
 
-      <LiveTerminal onAnalyze={(output) => setInput(output)} />
+        <TerminalView value={input} onChange={setInput} />
 
-      <button
-        onClick={handleAnalyze}
-        disabled={loading || !input.trim()}
-        className="w-full rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-      >
-        {loading ? "Analyzing..." : "Analyze"}
-      </button>
+        <LiveTerminal onAnalyze={(output) => setInput(output)} />
 
-     {error && <p className="text-sm text-red-400">{error}</p>}
-      {result && <RecommendationCard result={result} />}
+        <button
+          onClick={handleAnalyze}
+          disabled={loading || !input.trim()}
+          className="w-full rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+        >
+          {loading ? "Analyzing..." : "Analyze"}
+        </button>
 
-      <PullRequestCheck />
+        {error && <p className="text-sm text-red-400">{error}</p>}
+        {result && <RecommendationCard result={result} />}
+
+        <PullRequestCheck />
+      </div>
     </div>
   );
 }
