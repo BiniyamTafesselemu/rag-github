@@ -1,8 +1,19 @@
-import * as pty from "node-pty";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 
-// This is a sandboxed terminal service that allows running a limited set of commands in a controlled environment.
+const execFileAsync = promisify(execFile);
+
+/**
+ * Runs commands inside a throwaway Docker container built from
+ * sandbox/Dockerfile (Alpine + git only, no Node, no secrets).
+ * Each call spins up a fresh container, mounts the target repo path
+ * read-write, runs the command, captures output, and removes itself
+ * (`--rm`).
+ */
 
 const ALLOWED_COMMANDS = ["git", "ls", "cat", "pwd", "diff", "status"];
+const SANDBOX_IMAGE = "rag-git-sandbox";
+const TIMEOUT_MS = 15_000;
 
 export interface CommandResult {
   command: string;
@@ -15,30 +26,34 @@ function isAllowed(command: string): boolean {
   return ALLOWED_COMMANDS.includes(topLevel);
 }
 
-export function runCommand(command: string, cwd: string): Promise<CommandResult> {
-  return new Promise((resolve, reject) => {
-    if (!isAllowed(command)) {
-      reject(new Error(`Command not allowed by sandbox whitelist: "${command}"`));
-      return;
-    }
+export async function runCommand(command: string, cwd: string): Promise<CommandResult> {
+  if (!isAllowed(command)) {
+    throw new Error(`Command not allowed by sandbox whitelist: "${command}"`);
+  }
 
-    const [cmd, ...args] = command.trim().split(/\s+/);
-    let output = "";
+  const commandParts = command.trim().split(/\s+/);
 
-    const proc = pty.spawn(cmd, args, {
-      name: "xterm-color",
-      cols: 120,
-      rows: 30,
-      cwd,
-      env: process.env as Record<string, string>,
-    });
+  const dockerArgs = [
+    "run",
+    "--rm",
+    "--network=none",
+    "--memory=256m",
+    "--cpus=0.5",
+    "-v",
+    `${cwd}:/repo`,
+    SANDBOX_IMAGE,
+    ...commandParts,
+  ];
 
-    proc.onData((data) => {
-      output += data;
-    });
-
-    proc.onExit(({ exitCode }) => {
-      resolve({ command, output, exitCode });
-    });
-  });
+  try {
+    const { stdout, stderr } = await execFileAsync("docker", dockerArgs, { timeout: TIMEOUT_MS });
+    return { command, output: stdout + stderr, exitCode: 0 };
+  } catch (err: any) {
+    // execFile throws on non-zero exit codes; err.code is the exit code, err.stdout/stderr still populated.
+    return {
+      command,
+      output: (err.stdout ?? "") + (err.stderr ?? ""),
+      exitCode: typeof err.code === "number" ? err.code : 1,
+    };
+  }
 }
