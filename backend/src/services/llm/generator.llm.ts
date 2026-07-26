@@ -1,6 +1,5 @@
 import { env } from "../../config/env.js";
-import { callLlm } from "./llmClient.js";
-import { streamLlm } from "./llmClient.js";
+import { callLlm, streamLlm } from "./llmClient.js";
 
 export interface DocChunk {
   sourceUrl: string;
