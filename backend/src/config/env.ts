@@ -7,6 +7,7 @@ export const env = {
   databaseUrl: process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/rag_github",
 
   githubToken: process.env.GITHUB_TOKEN ?? "",
+  appApiKey: process.env.APP_API_KEY ?? "",
 
   groq: {
     apiKey: process.env.GROQ_API_KEY ?? "",

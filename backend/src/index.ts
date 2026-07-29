@@ -7,12 +7,16 @@ import { githubRouter } from "./routes/github.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { terminalRouter } from "./routes/terminal.routes.js";
 import { historyRouter } from "./routes/history.routes.js";
+import { apiKeyAuth } from "./middleware/apiKeyAuth.js";
 
 const app = express();
 app.use(cors({ origin: env.frontendOrigin }));
 app.use(express.json({ limit: "5mb" }));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
+
+// /health stays public (useful for uptime checks); everything under /api requires the key.
+app.use("/api", apiKeyAuth);
 app.use("/api", analyzeRouter);
 app.use("/api", githubRouter);
 app.use("/api", terminalRouter);
