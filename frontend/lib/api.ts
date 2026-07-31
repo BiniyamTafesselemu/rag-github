@@ -1,4 +1,9 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:4000";
+const API_KEY = process.env.NEXT_PUBLIC_APP_API_KEY ?? "";
+
+function authHeaders(extra: Record<string, string> = {}) {
+  return { ...extra, authorization: `Bearer ${API_KEY}` };
+}
 
 export interface FixPlan {
   summary: string;
@@ -21,7 +26,7 @@ export async function analyze(input: {
 }): Promise<AnalyzeResponse> {
   const res = await fetch(`${API_BASE}/api/analyze`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: authHeaders({ "content-type": "application/json" }),
     body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error((await res.json()).error ?? "Request failed");
@@ -33,7 +38,9 @@ export interface Mergeability {
 }
 
 export async function checkMergeability(owner: string, repo: string, pullNumber: number): Promise<Mergeability> {
-  const res = await fetch(`${API_BASE}/api/repo/${owner}/${repo}/pull/${pullNumber}/mergeability`);
+  const res = await fetch(`${API_BASE}/api/repo/${owner}/${repo}/pull/${pullNumber}/mergeability`, {
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error((await res.json()).error ?? "Request failed");
   return res.json();
 }
@@ -47,7 +54,7 @@ export interface TerminalResult {
 export async function runTerminalCommand(command: string, cwd: string): Promise<TerminalResult> {
   const res = await fetch(`${API_BASE}/api/terminal/run`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: authHeaders({ "content-type": "application/json" }),
     body: JSON.stringify({ command, cwd }),
   });
   if (!res.ok) throw new Error((await res.json()).error ?? "Request failed");
@@ -64,7 +71,9 @@ export interface SessionRecord {
 }
 
 export async function getSessions(): Promise<SessionRecord[]> {
-  const res = await fetch(`${API_BASE}/api/sessions`);
+  const res = await fetch(`${API_BASE}/api/sessions`, {
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error((await res.json()).error ?? "Request failed");
   return res.json();
 }
@@ -84,7 +93,7 @@ export async function analyzeStream(
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/api/analyze/stream`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: authHeaders({ "content-type": "application/json" }),
     body: JSON.stringify(input),
   });
 
